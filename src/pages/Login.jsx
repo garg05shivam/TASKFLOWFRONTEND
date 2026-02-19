@@ -1,12 +1,11 @@
 import { useState } from "react";
 import api from "../api/axios";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
-function Register() {
+function Login() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
-    name: "",
     email: "",
     password: "",
   });
@@ -19,26 +18,22 @@ function Register() {
     e.preventDefault();
 
     try {
-      const res = await api.post("/auth/register", form);
-      alert(res.data.message);
-      navigate("/");
+      const res = await api.post("/auth/login", form);
+
+      localStorage.setItem("token", res.data.token);
+
+      alert("Login successful!");
+      navigate("/dashboard");
     } catch (err) {
-      alert(err.response?.data?.message || "Error occurred");
+      alert(err.response?.data?.message || "Login failed");
     }
   };
 
   return (
     <div>
-      <h2>Register</h2>
+      <h2>Login</h2>
 
       <form onSubmit={handleSubmit}>
-        <input
-          name="name"
-          placeholder="Name"
-          onChange={handleChange}
-        />
-        <br /><br />
-
         <input
           name="email"
           placeholder="Email"
@@ -54,15 +49,10 @@ function Register() {
         />
         <br /><br />
 
-        <button type="submit">Register</button>
+        <button type="submit">Login</button>
       </form>
-
-      <p>
-        Already have an account?{" "}
-        <Link to="/">Login</Link>
-      </p>
     </div>
   );
 }
 
-export default Register;
+export default Login;
