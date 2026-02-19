@@ -60,6 +60,16 @@ function Login() {
     } catch (error) {
       clearTimeout(delayedToast);
       toast.dismiss(slowToastId);
+      if (error.code === "ECONNABORTED") {
+        toast.error("Server took too long to wake up. Please try again in 20-30 seconds.");
+        return;
+      }
+
+      if (!error.response) {
+        toast.error("Cannot reach server right now. Check backend status and try again.");
+        return;
+      }
+
       const message = error.response?.data?.message || "Login failed.";
       toast.error(message);
 

@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect } from "react";
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useState } from "react";
 
 const AuthContext = createContext();
 
@@ -14,21 +15,34 @@ const decodeToken = (token) => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(null);
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
+  const [token, setToken] = useState(() => {
     const storedToken = localStorage.getItem("token");
-    if (storedToken) {
-      const payload = decodeToken(storedToken);
-      if (payload?.exp && payload.exp * 1000 < Date.now()) {
-        localStorage.removeItem("token");
-        return;
-      }
-      setToken(storedToken);
-      setUser(payload);
+    if (!storedToken) {
+      return null;
     }
-  }, []);
+
+    const payload = decodeToken(storedToken);
+    if (payload?.exp && payload.exp * 1000 < Date.now()) {
+      localStorage.removeItem("token");
+      return null;
+    }
+
+    return storedToken;
+  });
+
+  const [user, setUser] = useState(() => {
+    const storedToken = localStorage.getItem("token");
+    if (!storedToken) {
+      return null;
+    }
+
+    const payload = decodeToken(storedToken);
+    if (payload?.exp && payload.exp * 1000 < Date.now()) {
+      return null;
+    }
+
+    return payload;
+  });
 
   const login = (newToken) => {
     const payload = decodeToken(newToken);
