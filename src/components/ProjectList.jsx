@@ -2,6 +2,8 @@ import { useState } from "react";
 
 function ProjectList({
   projects,
+  selectedProjectId,
+  loading,
   handleSelectProject,
   handleDeleteProject,
   handleUpdateProject,
@@ -10,77 +12,86 @@ function ProjectList({
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
 
+  const beginEdit = (project) => {
+    setEditingId(project._id);
+    setEditName(project.name);
+    setEditDescription(project.description || "");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditName("");
+    setEditDescription("");
+  };
+
+  if (loading) {
+    return <p className="loading-state">Loading projects...</p>;
+  }
+
   return (
-    <div className="section">
+    <section className="section">
       <h3>Projects</h3>
 
       {projects.map((project) => (
-        <div key={project._id} className="project-card">
-
+        <article
+          key={project._id}
+          className={`project-card ${selectedProjectId === project._id ? "active" : ""}`}
+        >
           {editingId === project._id ? (
-            <>
+            <div className="stack-form">
               <input
                 className="input-field"
                 value={editName}
-                onChange={(e) => setEditName(e.target.value)}
+                onChange={(event) => setEditName(event.target.value)}
               />
 
-              <input
-                className="input-field"
+              <textarea
+                className="input-field textarea-field"
                 value={editDescription}
-                onChange={(e) => setEditDescription(e.target.value)}
+                onChange={(event) => setEditDescription(event.target.value)}
               />
 
-              <button
-                className="button"
-                onClick={() => {
-                  handleUpdateProject(project._id, editName, editDescription);
-                  setEditingId(null);
-                }}
-              >
-                Save
-              </button>
+              <div className="inline-actions">
+                <button
+                  className="button"
+                  onClick={() => {
+                    handleUpdateProject(project._id, editName, editDescription);
+                    cancelEdit();
+                  }}
+                >
+                  Save
+                </button>
 
-              <button
-                className="button"
-                onClick={() => setEditingId(null)}
-              >
-                Cancel
-              </button>
-            </>
+                <button className="button button-secondary" onClick={cancelEdit}>
+                  Cancel
+                </button>
+              </div>
+            </div>
           ) : (
             <>
-              <span
+              <button
+                type="button"
                 className="project-name"
                 onClick={() => handleSelectProject(project)}
               >
                 {project.name}
-              </span>
-
-              <button
-                className="button"
-                onClick={() => {
-                  setEditingId(project._id);
-                  setEditName(project.name);
-                  setEditDescription(project.description);
-                }}
-              >
-                Edit
               </button>
 
-              <button
-                className="button"
-                onClick={() => handleDeleteProject(project._id)}
-              >
-                Delete
-              </button>
+              <p>{project.description || "No description added."}</p>
 
-              <p>{project.description}</p>
+              <div className="inline-actions">
+                <button className="button button-secondary" onClick={() => beginEdit(project)}>
+                  Edit
+                </button>
+                <button className="button button-danger" onClick={() => handleDeleteProject(project._id)}>
+                  Delete
+                </button>
+              </div>
             </>
           )}
-        </div>
+        </article>
       ))}
-    </div>
+    </section>
   );
 }
 

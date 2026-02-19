@@ -1,82 +1,117 @@
-import { useState } from "react";
-import api from "../api/axios";
-import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-
+import { Link, useNavigate } from "react-router-dom";
+import api from "../api/axios";
+import { useAuth } from "../context/AuthContext";
+import "./Auth.css";
 
 function Login() {
   const navigate = useNavigate();
-  const { login } = useAuth(); // ✅ use global auth
+  const { login } = useAuth();
+  const slowToastId = "auth-slow";
 
   const [form, setForm] = useState({
     email: "",
     password: "",
   });
-
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  useEffect(() => {
+    fetch(api.defaults.baseURL, {
+      method: "GET",
+      mode: "no-cors",
+      cache: "no-store",
+    }).catch(() => {});
+  }, []);
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setForm((previous) => ({ ...previous, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
-    if (!form.email || !form.password) {
-      return alert("Please fill all fields");
+    const payload = {
+      email: form.email.trim().toLowerCase(),
+      password: form.password,
+    };
+
+    if (!payload.email || !payload.password) {
+      toast.error("Please fill all fields.");
+      return;
     }
 
+    let delayedToast;
     try {
       setLoading(true);
+      delayedToast = setTimeout(() => {
+        toast.loading("Server is waking up. This can take a few seconds.", {
+          id: slowToastId,
+        });
+      }, 4000);
 
-      const res = await api.post("/auth/login", form);
-
-      // ✅ use context login instead of localStorage directly
-      login(res.data.token);
-
-      toast.success("Login successful");
+      const response = await api.post("/auth/login", payload);
+      clearTimeout(delayedToast);
+      toast.dismiss(slowToastId);
+      login(response.data.token);
+      toast.success("Login successful.");
       navigate("/dashboard");
+    } catch (error) {
+      clearTimeout(delayedToast);
+      toast.dismiss(slowToastId);
+      const message = error.response?.data?.message || "Login failed.";
+      toast.error(message);
 
-    } catch (err) {
-      toast.success("Login successful");
-toast.error("Login failed");
+      if (message.toLowerCase().includes("verify")) {
+        navigate(`/verify-otp?email=${encodeURIComponent(payload.email)}`);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div>
-      <h2>Login</h2>
+    <div className="auth-page">
+      <div className="auth-card">
+        <p className="auth-kicker">TaskFlow</p>
+        <h2>Welcome back</h2>
+        <p className="auth-description">
+          Sign in to manage your projects and tasks.
+        </p>
 
-      <form onSubmit={handleSubmit}>
-        <input
-          name="email"
-          placeholder="Email"
-          value={form.email}
-          onChange={handleChange}
-        />
-        <br /><br />
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <label htmlFor="email">Email</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="you@example.com"
+            value={form.email}
+            onChange={handleChange}
+            autoComplete="email"
+          />
 
-        <input
-          name="password"
-          type="password"
-          placeholder="Password"
-          value={form.password}
-          onChange={handleChange}
-        />
-        <br /><br />
+          <label htmlFor="password">Password</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            placeholder="Enter your password"
+            value={form.password}
+            onChange={handleChange}
+            autoComplete="current-password"
+          />
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Logging in..." : "Login"}
-        </button>
-      </form>
+          <button className="auth-button" type="submit" disabled={loading}>
+            {loading ? "Logging in..." : "Login"}
+          </button>
+        </form>
 
-      <p>
-        Don't have an account?{" "}
-        <Link to="/register">Register</Link>
-      </p>
+        <p className="auth-footer">
+          Do not have an account? <Link to="/register">Register</Link>
+        </p>
+      </div>
     </div>
   );
 }

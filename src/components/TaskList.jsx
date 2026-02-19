@@ -2,6 +2,8 @@ import { useState } from "react";
 
 function TaskList({
   tasks,
+  loading,
+  selectedProject,
   handleDeleteTask,
   handleUpdateStatus,
   handleUpdateTask,
@@ -10,83 +12,94 @@ function TaskList({
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
 
-  return (
-    <div className="section">
-      {tasks.map((task) => (
-        <div key={task._id} className="task-card">
+  const beginEdit = (task) => {
+    setEditingId(task._id);
+    setEditTitle(task.title);
+    setEditDescription(task.description || "");
+  };
 
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditTitle("");
+    setEditDescription("");
+  };
+
+  if (!selectedProject) {
+    return <p className="empty-state">Select a project to view its tasks.</p>;
+  }
+
+  if (loading) {
+    return <p className="loading-state">Loading tasks...</p>;
+  }
+
+  if (!tasks.length) {
+    return <p className="empty-state">No tasks found for this project.</p>;
+  }
+
+  return (
+    <section className="section">
+      {tasks.map((task) => (
+        <article key={task._id} className="task-card">
           {editingId === task._id ? (
-            <>
+            <div className="stack-form">
               <input
                 className="input-field"
                 value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
+                onChange={(event) => setEditTitle(event.target.value)}
               />
 
-              <input
-                className="input-field"
+              <textarea
+                className="input-field textarea-field"
                 value={editDescription}
-                onChange={(e) => setEditDescription(e.target.value)}
+                onChange={(event) => setEditDescription(event.target.value)}
               />
 
-              <button
-                className="button"
-                onClick={() => {
-                  handleUpdateTask(task._id, editTitle, editDescription);
-                  setEditingId(null);
-                }}
-              >
-                Save
-              </button>
+              <div className="inline-actions">
+                <button
+                  className="button"
+                  onClick={() => {
+                    handleUpdateTask(task._id, editTitle, editDescription);
+                    cancelEdit();
+                  }}
+                >
+                  Save
+                </button>
 
-              <button
-                className="button"
-                onClick={() => setEditingId(null)}
-              >
-                Cancel
-              </button>
-            </>
+                <button className="button button-secondary" onClick={cancelEdit}>
+                  Cancel
+                </button>
+              </div>
+            </div>
           ) : (
             <>
-              <strong>{task.title}</strong>
-              <p>{task.description}</p>
+              <h4>{task.title}</h4>
+              <p>{task.description || "No description added."}</p>
 
-              <select
-                className="select-status"
-                value={task.status}
-                onChange={(e) =>
-                  handleUpdateStatus(task._id, e.target.value)
-                }
-              >
-                <option value="todo">Todo</option>
-                <option value="in-progress">In Progress</option>
-                <option value="done">Done</option>
-              </select>
+              <div className="task-row">
+                <select
+                  className="select-status"
+                  value={task.status}
+                  onChange={(event) => handleUpdateStatus(task._id, event.target.value)}
+                >
+                  <option value="todo">Todo</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="done">Done</option>
+                </select>
 
-              <br /><br />
-
-              <button
-                className="button"
-                onClick={() => {
-                  setEditingId(task._id);
-                  setEditTitle(task.title);
-                  setEditDescription(task.description);
-                }}
-              >
-                Edit
-              </button>
-
-              <button
-                className="button"
-                onClick={() => handleDeleteTask(task._id)}
-              >
-                Delete
-              </button>
+                <div className="inline-actions">
+                  <button className="button button-secondary" onClick={() => beginEdit(task)}>
+                    Edit
+                  </button>
+                  <button className="button button-danger" onClick={() => handleDeleteTask(task._id)}>
+                    Delete
+                  </button>
+                </div>
+              </div>
             </>
           )}
-        </div>
+        </article>
       ))}
-    </div>
+    </section>
   );
 }
 
