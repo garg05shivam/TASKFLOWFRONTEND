@@ -15,67 +15,101 @@ function Dashboard() {
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
 
+  // ✅ FETCH PROJECTS
   const fetchProjects = async () => {
     try {
       const res = await api.get("/projects");
-      setProjects(res.data.projects);
+      setProjects(res.data.projects || []);
     } catch (err) {
-      navigate("/");
+      console.error("Fetch Projects Error:", err.response?.data || err.message);
+
+      if (err.response?.status === 401) {
+        alert("Session expired. Please login again.");
+        localStorage.removeItem("token");
+        navigate("/");
+      }
     }
   };
 
+  // ✅ FETCH TASKS
   const fetchTasks = async (projectId) => {
     try {
       const res = await api.get(`/tasks?project=${projectId}`);
-      setTasks(res.data.tasks);
+      setTasks(res.data.tasks || []);
     } catch (err) {
+      console.error("Fetch Tasks Error:", err.response?.data || err.message);
       alert("Error fetching tasks");
     }
   };
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      navigate("/");
+      return;
+    }
+
     fetchProjects();
   }, []);
 
+  // ✅ CREATE PROJECT
   const handleCreateProject = async () => {
+    if (!projectName) return alert("Project name required");
+
     try {
       await api.post("/projects", {
         name: projectName,
         description: projectDescription,
       });
+
       setProjectName("");
       setProjectDescription("");
       fetchProjects();
     } catch (err) {
-      alert("Error creating project");
+      console.error("Create Project Error:", err.response?.data || err.message);
+      alert(err.response?.data?.message || "Error creating project");
     }
   };
 
+  // ✅ SELECT PROJECT
   const handleSelectProject = (project) => {
     setSelectedProject(project);
     fetchTasks(project._id);
   };
 
+  // ✅ CREATE TASK
   const handleCreateTask = async () => {
+    if (!taskTitle) return alert("Task title required");
+
     try {
       await api.post("/tasks", {
         title: taskTitle,
         description: taskDescription,
         project: selectedProject._id,
       });
+
       setTaskTitle("");
       setTaskDescription("");
       fetchTasks(selectedProject._id);
     } catch (err) {
-      alert("Error creating task");
+      console.error("Create Task Error:", err.response?.data || err.message);
+      alert(err.response?.data?.message || "Error creating task");
     }
   };
 
+  // ✅ DELETE TASK
   const handleDeleteTask = async (id) => {
-    await api.delete(`/tasks/${id}`);
-    fetchTasks(selectedProject._id);
+    try {
+      await api.delete(`/tasks/${id}`);
+      fetchTasks(selectedProject._id);
+    } catch (err) {
+      console.error("Delete Task Error:", err.response?.data || err.message);
+      alert("Error deleting task");
+    }
   };
 
+  // ✅ LOGOUT
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/");
@@ -106,11 +140,17 @@ function Dashboard() {
       <hr />
 
       <h3>Projects</h3>
+      {projects.length === 0 && <p>No projects found.</p>}
+
       {projects.map((project) => (
         <div key={project._id}>
-          <strong onClick={() => handleSelectProject(project)}>
+          <strong
+            style={{ cursor: "pointer" }}
+            onClick={() => handleSelectProject(project)}
+          >
             {project.name}
           </strong>
+          <p>{project.description}</p>
           <hr />
         </div>
       ))}
@@ -136,6 +176,8 @@ function Dashboard() {
           <button onClick={handleCreateTask}>Create Task</button>
 
           <hr />
+
+          {tasks.length === 0 && <p>No tasks found.</p>}
 
           {tasks.map((task) => (
             <div key={task._id}>
