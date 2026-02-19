@@ -2,6 +2,8 @@ import { useState } from "react";
 import api from "../api/axios";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import toast from "react-hot-toast";
+
 
 function Login() {
   const navigate = useNavigate();
@@ -33,11 +35,12 @@ function Login() {
       // ✅ use context login instead of localStorage directly
       login(res.data.token);
 
-      alert("Login successful!");
+      toast.success("Login successful");
       navigate("/dashboard");
 
     } catch (err) {
-      alert(err.response?.data?.message || "Login failed");
+      toast.success("Login successful");
+toast.error("Login failed");
     } finally {
       setLoading(false);
     }
