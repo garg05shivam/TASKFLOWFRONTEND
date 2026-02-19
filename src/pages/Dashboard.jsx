@@ -98,6 +98,20 @@ function Dashboard() {
     }
   };
 
+  // ✅ UPDATE TASK STATUS
+  const handleUpdateStatus = async (taskId, newStatus) => {
+    try {
+      await api.put(`/tasks/${taskId}`, {
+        status: newStatus,
+      });
+
+      fetchTasks(selectedProject._id);
+    } catch (err) {
+      console.error("Update Status Error:", err.response?.data || err.message);
+      alert("Error updating task status");
+    }
+  };
+
   // ✅ DELETE TASK
   const handleDeleteTask = async (id) => {
     try {
@@ -183,10 +197,24 @@ function Dashboard() {
             <div key={task._id}>
               <strong>{task.title}</strong>
               <p>{task.description}</p>
-              <p>Status: {task.status}</p>
+
+              <select
+                value={task.status}
+                onChange={(e) =>
+                  handleUpdateStatus(task._id, e.target.value)
+                }
+              >
+                <option value="todo">Todo</option>
+                <option value="in-progress">In Progress</option>
+                <option value="done">Done</option>
+              </select>
+
+              <br /><br />
+
               <button onClick={() => handleDeleteTask(task._id)}>
                 Delete
               </button>
+
               <hr />
             </div>
           ))}
