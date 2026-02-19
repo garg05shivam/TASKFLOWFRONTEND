@@ -15,7 +15,7 @@ function Dashboard() {
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
 
-  // ✅ FETCH PROJECTS
+  // 🔹 FETCH PROJECTS
   const fetchProjects = async () => {
     try {
       const res = await api.get("/projects");
@@ -31,7 +31,7 @@ function Dashboard() {
     }
   };
 
-  // ✅ FETCH TASKS
+  // 🔹 FETCH TASKS
   const fetchTasks = async (projectId) => {
     try {
       const res = await api.get(`/tasks?project=${projectId}`);
@@ -53,7 +53,7 @@ function Dashboard() {
     fetchProjects();
   }, []);
 
-  // ✅ CREATE PROJECT
+  // 🔹 CREATE PROJECT
   const handleCreateProject = async () => {
     if (!projectName) return alert("Project name required");
 
@@ -72,13 +72,30 @@ function Dashboard() {
     }
   };
 
-  // ✅ SELECT PROJECT
+  // 🔹 DELETE PROJECT
+  const handleDeleteProject = async (projectId) => {
+    try {
+      await api.delete(`/projects/${projectId}`);
+
+      if (selectedProject?._id === projectId) {
+        setSelectedProject(null);
+        setTasks([]);
+      }
+
+      fetchProjects();
+    } catch (err) {
+      console.error("Delete Project Error:", err.response?.data || err.message);
+      alert("Error deleting project");
+    }
+  };
+
+  // 🔹 SELECT PROJECT
   const handleSelectProject = (project) => {
     setSelectedProject(project);
     fetchTasks(project._id);
   };
 
-  // ✅ CREATE TASK
+  // 🔹 CREATE TASK
   const handleCreateTask = async () => {
     if (!taskTitle) return alert("Task title required");
 
@@ -98,7 +115,7 @@ function Dashboard() {
     }
   };
 
-  // ✅ UPDATE TASK STATUS
+  // 🔹 UPDATE TASK STATUS
   const handleUpdateStatus = async (taskId, newStatus) => {
     try {
       await api.put(`/tasks/${taskId}`, {
@@ -112,7 +129,7 @@ function Dashboard() {
     }
   };
 
-  // ✅ DELETE TASK
+  // 🔹 DELETE TASK
   const handleDeleteTask = async (id) => {
     try {
       await api.delete(`/tasks/${id}`);
@@ -123,19 +140,20 @@ function Dashboard() {
     }
   };
 
-  // ✅ LOGOUT
+  // 🔹 LOGOUT
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/");
   };
 
   return (
-    <div>
+    <div style={{ padding: "20px" }}>
       <h2>Dashboard</h2>
       <button onClick={handleLogout}>Logout</button>
 
       <hr />
 
+      {/* CREATE PROJECT */}
       <h3>Create Project</h3>
       <input
         placeholder="Project Name"
@@ -153,6 +171,7 @@ function Dashboard() {
 
       <hr />
 
+      {/* PROJECT LIST */}
       <h3>Projects</h3>
       {projects.length === 0 && <p>No projects found.</p>}
 
@@ -164,11 +183,20 @@ function Dashboard() {
           >
             {project.name}
           </strong>
+
+          <button
+            style={{ marginLeft: "10px" }}
+            onClick={() => handleDeleteProject(project._id)}
+          >
+            Delete
+          </button>
+
           <p>{project.description}</p>
           <hr />
         </div>
       ))}
 
+      {/* TASK SECTION */}
       {selectedProject && (
         <>
           <h3>Tasks for: {selectedProject.name}</h3>
