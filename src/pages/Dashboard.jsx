@@ -4,17 +4,32 @@ import { useNavigate } from "react-router-dom";
 
 function Dashboard() {
   const navigate = useNavigate();
+
   const [projects, setProjects] = useState([]);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const [selectedProject, setSelectedProject] = useState(null);
+
+  const [projectName, setProjectName] = useState("");
+  const [projectDescription, setProjectDescription] = useState("");
+
+  const [tasks, setTasks] = useState([]);
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskDescription, setTaskDescription] = useState("");
 
   const fetchProjects = async () => {
     try {
       const res = await api.get("/projects");
       setProjects(res.data.projects);
     } catch (err) {
-      alert("Unauthorized or error");
       navigate("/");
+    }
+  };
+
+  const fetchTasks = async (projectId) => {
+    try {
+      const res = await api.get(`/tasks?project=${projectId}`);
+      setTasks(res.data.tasks);
+    } catch (err) {
+      alert("Error fetching tasks");
     }
   };
 
@@ -22,15 +37,43 @@ function Dashboard() {
     fetchProjects();
   }, []);
 
-  const handleCreate = async () => {
+  const handleCreateProject = async () => {
     try {
-      await api.post("/projects", { name, description });
-      setName("");
-      setDescription("");
+      await api.post("/projects", {
+        name: projectName,
+        description: projectDescription,
+      });
+      setProjectName("");
+      setProjectDescription("");
       fetchProjects();
     } catch (err) {
-      alert(err.response?.data?.message || "Error creating project");
+      alert("Error creating project");
     }
+  };
+
+  const handleSelectProject = (project) => {
+    setSelectedProject(project);
+    fetchTasks(project._id);
+  };
+
+  const handleCreateTask = async () => {
+    try {
+      await api.post("/tasks", {
+        title: taskTitle,
+        description: taskDescription,
+        project: selectedProject._id,
+      });
+      setTaskTitle("");
+      setTaskDescription("");
+      fetchTasks(selectedProject._id);
+    } catch (err) {
+      alert("Error creating task");
+    }
+  };
+
+  const handleDeleteTask = async (id) => {
+    await api.delete(`/tasks/${id}`);
+    fetchTasks(selectedProject._id);
   };
 
   const handleLogout = () => {
@@ -48,28 +91,65 @@ function Dashboard() {
       <h3>Create Project</h3>
       <input
         placeholder="Project Name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
+        value={projectName}
+        onChange={(e) => setProjectName(e.target.value)}
       />
       <br /><br />
       <input
         placeholder="Description"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
+        value={projectDescription}
+        onChange={(e) => setProjectDescription(e.target.value)}
       />
       <br /><br />
-      <button onClick={handleCreate}>Create</button>
+      <button onClick={handleCreateProject}>Create Project</button>
 
       <hr />
 
-      <h3>My Projects</h3>
+      <h3>Projects</h3>
       {projects.map((project) => (
         <div key={project._id}>
-          <strong>{project.name}</strong>
-          <p>{project.description}</p>
+          <strong onClick={() => handleSelectProject(project)}>
+            {project.name}
+          </strong>
           <hr />
         </div>
       ))}
+
+      {selectedProject && (
+        <>
+          <h3>Tasks for: {selectedProject.name}</h3>
+
+          <input
+            placeholder="Task Title"
+            value={taskTitle}
+            onChange={(e) => setTaskTitle(e.target.value)}
+          />
+          <br /><br />
+
+          <input
+            placeholder="Task Description"
+            value={taskDescription}
+            onChange={(e) => setTaskDescription(e.target.value)}
+          />
+          <br /><br />
+
+          <button onClick={handleCreateTask}>Create Task</button>
+
+          <hr />
+
+          {tasks.map((task) => (
+            <div key={task._id}>
+              <strong>{task.title}</strong>
+              <p>{task.description}</p>
+              <p>Status: {task.status}</p>
+              <button onClick={() => handleDeleteTask(task._id)}>
+                Delete
+              </button>
+              <hr />
+            </div>
+          ))}
+        </>
+      )}
     </div>
   );
 }
