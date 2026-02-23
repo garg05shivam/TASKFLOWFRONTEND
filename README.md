@@ -151,6 +151,4 @@ The frontend uses Axios for HTTP requests. All API calls are configured in `src/
 - Request interceptors for auth tokens
 - Response interceptors for error handling
 
-## License
 
-ISC

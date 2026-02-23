@@ -3,8 +3,13 @@ import toast, { Toaster } from "react-hot-toast";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import { setUnauthorizedHandler } from "./api/axios";
 import { useAuth } from "./context/AuthContext";
+import CreateProject from "./pages/CreateProject";
+import CreateTask from "./pages/CreateTask";
 import Dashboard from "./pages/Dashboard";
+import EditTask from "./pages/EditTask";
 import Login from "./pages/Login";
+import Profile from "./pages/Profile";
+import ProjectDetails from "./pages/ProjectDetails";
 import Register from "./pages/Register";
 import VerifyOtp from "./pages/VerifyOtp";
 import ProtectedRoute from "./routes/ProtectedRoute";
@@ -37,6 +42,51 @@ function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/projects/new"
+          element={
+            <ProtectedRoute>
+              <CreateProject />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/projects/:id"
+          element={
+            <ProtectedRoute>
+              <ProjectDetails />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/projects/:id/tasks/new"
+          element={
+            <ProtectedRoute>
+              <CreateTask />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/tasks/:id/edit"
+          element={
+            <ProtectedRoute>
+              <EditTask />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
             </ProtectedRoute>
           }
         />

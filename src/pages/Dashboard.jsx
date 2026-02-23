@@ -2,9 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
-import ProjectForm from "../components/ProjectForm";
 import ProjectList from "../components/ProjectList";
-import TaskForm from "../components/TaskForm";
 import TaskList from "../components/TaskList";
 import { useAuth } from "../context/AuthContext";
 import "./Dashboard.css";
@@ -17,18 +15,12 @@ function Dashboard() {
 
   const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);
-  const [projectName, setProjectName] = useState("");
-  const [projectDescription, setProjectDescription] = useState("");
   const [tasks, setTasks] = useState([]);
-  const [taskTitle, setTaskTitle] = useState("");
-  const [taskDescription, setTaskDescription] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [statusFilter, setStatusFilter] = useState("all");
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [loadingTasks, setLoadingTasks] = useState(false);
-  const [savingProject, setSavingProject] = useState(false);
-  const [savingTask, setSavingTask] = useState(false);
 
   const selectedProjectId = selectedProject?._id;
 
@@ -90,6 +82,7 @@ function Dashboard() {
 
   useEffect(() => {
     fetchProjects();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -97,30 +90,8 @@ function Dashboard() {
       fetchTasks(selectedProjectId, 1, "all");
       setStatusFilter("all");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProjectId]);
-
-  const handleCreateProject = async () => {
-    if (!projectName.trim()) {
-      toast.error("Project name is required.");
-      return;
-    }
-
-    try {
-      setSavingProject(true);
-      const response = await api.post("/projects", {
-        name: projectName.trim(),
-        description: projectDescription.trim(),
-      });
-      setProjectName("");
-      setProjectDescription("");
-      toast.success(response.data.message || "Project created.");
-      await fetchProjects();
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Could not create project.");
-    } finally {
-      setSavingProject(false);
-    }
-  };
 
   const handleDeleteProject = async (projectId) => {
     try {
@@ -161,34 +132,6 @@ function Dashboard() {
     setCurrentPage(1);
     setStatusFilter("all");
     fetchTasks(project._id, 1, "all");
-  };
-
-  const handleCreateTask = async () => {
-    if (!selectedProjectId) {
-      toast.error("Select a project first.");
-      return;
-    }
-    if (!taskTitle.trim()) {
-      toast.error("Task title is required.");
-      return;
-    }
-
-    try {
-      setSavingTask(true);
-      const response = await api.post("/tasks", {
-        title: taskTitle.trim(),
-        description: taskDescription.trim(),
-        project: selectedProjectId,
-      });
-      setTaskTitle("");
-      setTaskDescription("");
-      toast.success(response.data.message || "Task created.");
-      await fetchTasks(selectedProjectId, 1, statusFilter);
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Could not create task.");
-    } finally {
-      setSavingTask(false);
-    }
   };
 
   const handleDeleteTask = async (taskId) => {
@@ -268,12 +211,16 @@ function Dashboard() {
           <div>
             <p className="dashboard-kicker">TaskFlow Workspace</p>
             <h1>Project Dashboard</h1>
-            <p className="dashboard-subtext">
-              Track projects, update tasks, and keep delivery moving.
-            </p>
+            <p className="dashboard-subtext">Manage projects and tasks from one place.</p>
           </div>
           <div className="dashboard-header-actions">
             <span className="role-chip">{role || "user"}</span>
+            <button className="button button-secondary" onClick={() => navigate("/projects/new")}>
+              Create Project
+            </button>
+            <button className="button button-secondary" onClick={() => navigate("/profile")}>
+              Profile
+            </button>
             <button className="button button-secondary" onClick={handleLogout}>
               Logout
             </button>
@@ -282,14 +229,12 @@ function Dashboard() {
 
         <section className="dashboard-grid">
           <article className="panel">
-            <ProjectForm
-              projectName={projectName}
-              setProjectName={setProjectName}
-              projectDescription={projectDescription}
-              setProjectDescription={setProjectDescription}
-              handleCreateProject={handleCreateProject}
-              savingProject={savingProject}
-            />
+            <div className="tasks-head" style={{ marginBottom: "0.8rem" }}>
+              <h3>Projects</h3>
+              <button className="button button-secondary" onClick={() => navigate("/projects/new")}>
+                New
+              </button>
+            </div>
 
             <ProjectList
               projects={projects}
@@ -300,47 +245,48 @@ function Dashboard() {
               handleUpdateProject={handleUpdateProject}
             />
 
-            {emptyProjects && (
-              <p className="empty-state">No projects yet. Create one to start.</p>
-            )}
+            {emptyProjects && <p className="empty-state">No projects yet. Create one to start.</p>}
           </article>
 
           <article className="panel">
             <div className="tasks-head">
               <div>
                 <h3>Tasks</h3>
-                <p>
-                  {selectedProject ? `Project: ${selectedProject.name}` : "Select a project"}
-                </p>
+                <p>{selectedProject ? `Project: ${selectedProject.name}` : "Select a project"}</p>
               </div>
 
-              {selectedProject && (
-                <div className="filter-wrap">
-                  <label htmlFor="status-filter">Status</label>
-                  <select
-                    id="status-filter"
-                    value={statusFilter}
-                    onChange={(event) => handleFilterChange(event.target.value)}
-                    className="select-status"
+              <div className="dashboard-header-actions">
+                {selectedProject && (
+                  <button className="button button-secondary" onClick={() => navigate(`/projects/${selectedProjectId}`)}>
+                    Project Details
+                  </button>
+                )}
+                {selectedProject && (
+                  <button
+                    className="button button-secondary"
+                    onClick={() => navigate(`/projects/${selectedProjectId}/tasks/new`)}
                   >
-                    <option value="all">All</option>
-                    <option value="todo">Todo</option>
-                    <option value="in-progress">In Progress</option>
-                    <option value="done">Done</option>
-                  </select>
-                </div>
-              )}
+                    Create Task
+                  </button>
+                )}
+                {selectedProject && (
+                  <div className="filter-wrap">
+                    <label htmlFor="status-filter">Status</label>
+                    <select
+                      id="status-filter"
+                      value={statusFilter}
+                      onChange={(event) => handleFilterChange(event.target.value)}
+                      className="select-status"
+                    >
+                      <option value="all">All</option>
+                      <option value="todo">Todo</option>
+                      <option value="in-progress">In Progress</option>
+                      <option value="done">Done</option>
+                    </select>
+                  </div>
+                )}
+              </div>
             </div>
-
-            <TaskForm
-              taskTitle={taskTitle}
-              setTaskTitle={setTaskTitle}
-              taskDescription={taskDescription}
-              setTaskDescription={setTaskDescription}
-              handleCreateTask={handleCreateTask}
-              savingTask={savingTask}
-              disabled={!selectedProject}
-            />
 
             <TaskList
               tasks={tasks}
