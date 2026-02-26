@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import { useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
 import api from "../api/axios";
+import { bumpSyncVersion } from "../store/syncSlice";
 import "./Workspace.css";
 
 function Notifications() {
+  const dispatch = useDispatch();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -26,6 +29,12 @@ function Notifications() {
     };
 
     load();
+
+    const interval = setInterval(() => {
+      fetchNotifications().catch(() => {});
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const unreadCount = useMemo(
@@ -36,6 +45,7 @@ function Notifications() {
   const markRead = async (id) => {
     try {
       await api.patch(`/collaboration/notifications/${id}/read`);
+      dispatch(bumpSyncVersion());
       setNotifications((prev) =>
         prev.map((item) => (item._id === id ? { ...item, isRead: true } : item))
       );
@@ -47,6 +57,7 @@ function Notifications() {
   const clearAll = async () => {
     try {
       await api.delete("/collaboration/notifications");
+      dispatch(bumpSyncVersion());
       setNotifications([]);
       toast.success("All notifications cleared.");
     } catch (error) {

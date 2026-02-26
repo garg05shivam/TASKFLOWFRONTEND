@@ -1,12 +1,15 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
+import { bumpSyncVersion } from "../store/syncSlice";
 import "./Workspace.css";
 
 function CreateProject() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { role } = useAuth();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -32,6 +35,7 @@ function CreateProject() {
         name: name.trim(),
         description: description.trim(),
       });
+      dispatch(bumpSyncVersion());
 
       const projectId = response.data?.project?._id;
       toast.success("Project created successfully.");

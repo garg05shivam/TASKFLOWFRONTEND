@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import { useDispatch } from "react-redux";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
+import { bumpSyncVersion } from "../store/syncSlice";
 import "./Workspace.css";
 
 function CreateTask() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { role, user } = useAuth();
   const [project, setProject] = useState(null);
   const [title, setTitle] = useState("");
@@ -87,6 +90,7 @@ function CreateTask() {
         dueDate: dueDate || null,
         assignedTo: assignedTo || null,
       });
+      dispatch(bumpSyncVersion());
       toast.success("Task created successfully.");
       navigate(`/projects/${id}`);
     } catch (error) {

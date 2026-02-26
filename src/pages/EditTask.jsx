@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import { useDispatch } from "react-redux";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
+import { bumpSyncVersion } from "../store/syncSlice";
 import "./Workspace.css";
 
 function EditTask() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { role, user } = useAuth();
   const [task, setTask] = useState(null);
   const [title, setTitle] = useState("");
@@ -99,6 +102,7 @@ function EditTask() {
         assignedTo: assignedTo || null,
         attachments,
       });
+      dispatch(bumpSyncVersion());
       toast.success("Task updated successfully.");
       const projectId = task?.project?._id;
       if (projectId) {

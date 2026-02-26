@@ -1,12 +1,15 @@
 import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import { useDispatch } from "react-redux";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
+import { bumpSyncVersion } from "../store/syncSlice";
 import "./Workspace.css";
 
 function InviteAccept() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { token: authToken } = useAuth();
   const [searchParams] = useSearchParams();
   const [submitting, setSubmitting] = useState(false);
@@ -27,6 +30,7 @@ function InviteAccept() {
     try {
       setSubmitting(true);
       const response = await api.post("/collaboration/invitations/accept", { token });
+      dispatch(bumpSyncVersion());
       toast.success(response.data.message || "Invitation accepted.");
       if (response.data.projectId) {
         navigate(`/projects/${response.data.projectId}`);

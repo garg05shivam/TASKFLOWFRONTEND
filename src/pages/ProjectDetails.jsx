@@ -1,16 +1,20 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
+import { bumpSyncVersion } from "../store/syncSlice";
 import "./Workspace.css";
 
 const PAGE_SIZE = 5;
 
 function ProjectDetails() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { role, user } = useAuth();
   const { id } = useParams();
+  const syncVersion = useSelector((state) => state.sync.version);
 
   const [project, setProject] = useState(null);
   const [tasks, setTasks] = useState([]);
@@ -102,16 +106,19 @@ function ProjectDetails() {
 
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, syncVersion]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       fetchMessages().catch(() => {});
-    }, 5000);
+      fetchTasks(page, status, search).catch(() => {});
+      fetchMembers().catch(() => {});
+      fetchActivity().catch(() => {});
+    }, 8000);
 
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, page, status, search, syncVersion]);
 
   useEffect(() => {
     const fetchUnreadNotifications = async () => {
@@ -140,6 +147,7 @@ function ProjectDetails() {
 
     try {
       await api.delete(`/tasks/${taskId}`);
+      dispatch(bumpSyncVersion());
       toast.success("Task deleted.");
       await Promise.all([fetchTasks(page, status, search), fetchActivity()]);
     } catch (error) {
@@ -155,6 +163,7 @@ function ProjectDetails() {
 
     try {
       await api.put(`/tasks/${taskId}`, { status: nextStatus });
+      dispatch(bumpSyncVersion());
       await Promise.all([fetchTasks(page, status, search), fetchActivity()]);
     } catch (error) {
       toast.error(error.response?.data?.message || "Could not update task status.");
@@ -170,6 +179,7 @@ function ProjectDetails() {
     try {
       setAssigningTaskId(taskId);
       await api.put(`/tasks/${taskId}`, { assignedTo: assigneeId || null });
+      dispatch(bumpSyncVersion());
       toast.success("Task assignee updated.");
       await Promise.all([fetchTasks(page, status, search), fetchActivity()]);
     } catch (error) {
@@ -183,6 +193,7 @@ function ProjectDetails() {
     try {
       setCompletingTaskId(taskId);
       const response = await api.post(`/tasks/${taskId}/complete`);
+      dispatch(bumpSyncVersion());
       toast.success(response.data?.message || "Task marked done and removed.");
       await Promise.all([fetchTasks(page, status, search), fetchActivity()]);
     } catch (error) {
@@ -209,6 +220,7 @@ function ProjectDetails() {
     try {
       setInviting(true);
       const response = await api.post(`/collaboration/projects/${id}/members`, { email });
+      dispatch(bumpSyncVersion());
       toast.success(response.data.status === "added" ? "Member added." : "Invitation recorded.");
       setInviteEmail("");
       await Promise.all([fetchMembers(), fetchActivity()]);
@@ -228,6 +240,7 @@ function ProjectDetails() {
 
     try {
       await api.delete(`/collaboration/projects/${id}/members/${memberId}`);
+      dispatch(bumpSyncVersion());
       toast.success("Member removed.");
       await Promise.all([fetchMembers(), fetchActivity()]);
     } catch (error) {
@@ -242,6 +255,7 @@ function ProjectDetails() {
 
     try {
       await api.post(`/collaboration/projects/${id}/chat`, { text });
+      dispatch(bumpSyncVersion());
       setChatText("");
       await Promise.all([fetchMessages(), fetchActivity()]);
     } catch (error) {
@@ -255,6 +269,7 @@ function ProjectDetails() {
 
     try {
       await api.post(`/collaboration/tasks/${taskId}/comments`, { text });
+      dispatch(bumpSyncVersion());
       setCommentInputs((prev) => ({ ...prev, [taskId]: "" }));
       await Promise.all([fetchTaskComments(taskId), fetchActivity()]);
     } catch (error) {
@@ -496,6 +511,10 @@ function ProjectDetails() {
 }
 
 export default ProjectDetails;
+
+
+
+
 
 
 

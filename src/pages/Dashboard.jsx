@@ -1,16 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import ProjectList from "../components/ProjectList";
 import { useAuth } from "../context/AuthContext";
+import { bumpSyncVersion } from "../store/syncSlice";
 import "./Dashboard.css";
 
 const TASKS_PER_PAGE = 5;
 
 function Dashboard() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { logout, role, user } = useAuth();
+  const syncVersion = useSelector((state) => state.sync.version);
 
   const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);
@@ -216,7 +220,37 @@ function Dashboard() {
     fetchProjects();
     fetchAnalytics();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [role]);
+  }, [role, syncVersion]);
+
+  useEffect(() => {
+    if (role !== "super_admin") {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      fetchSuperOverview();
+    }, 10000);
+
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role, syncVersion]);
+
+  useEffect(() => {
+    if (role === "super_admin") {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      fetchProjects();
+      fetchAnalytics();
+      if (selectedProjectId) {
+        fetchTasks(selectedProjectId, currentPage, statusFilter, priorityFilter, labelFilter);
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role, selectedProjectId, currentPage, statusFilter, priorityFilter, labelFilter]);
 
   useEffect(() => {
     if (role === "super_admin") {
@@ -261,6 +295,7 @@ function Dashboard() {
 
     try {
       await api.delete(`/projects/${projectId}`);
+      dispatch(bumpSyncVersion());
       toast.success("Project deleted.");
 
       if (selectedProjectId === projectId) {
@@ -291,6 +326,7 @@ function Dashboard() {
         name: name.trim(),
         description: description.trim(),
       });
+      dispatch(bumpSyncVersion());
       toast.success("Project updated.");
       await fetchProjects();
     } catch (error) {
@@ -319,6 +355,7 @@ function Dashboard() {
 
     try {
       await api.put(`/tasks/${taskId}`, { status });
+      dispatch(bumpSyncVersion());
       await fetchTasks(selectedProjectId, currentPage, statusFilter, priorityFilter, labelFilter);
     } catch (error) {
       toast.error(error.response?.data?.message || "Could not update status.");
