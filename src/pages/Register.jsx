@@ -12,6 +12,7 @@ function Register() {
     name: "",
     email: "",
     password: "",
+    role: "user",
   });
 
   useEffect(() => {
@@ -34,6 +35,7 @@ function Register() {
       name: form.name.trim(),
       email: form.email.trim().toLowerCase(),
       password: form.password,
+      role: form.role,
     };
 
     if (!payload.name || !payload.email || !payload.password) {
@@ -125,6 +127,17 @@ function Register() {
             onChange={handleChange}
             autoComplete="new-password"
           />
+
+          <label htmlFor="role">Role</label>
+          <select
+            id="role"
+            name="role"
+            value={form.role}
+            onChange={handleChange}
+          >
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
 
           <button className="auth-button" type="submit" disabled={loading}>
             {loading ? "Creating..." : "Create Account"}

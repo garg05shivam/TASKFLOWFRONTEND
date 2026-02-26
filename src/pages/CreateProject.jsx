@@ -2,16 +2,24 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import { useAuth } from "../context/AuthContext";
 import "./Workspace.css";
 
 function CreateProject() {
   const navigate = useNavigate();
+  const { role } = useAuth();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (role !== "admin") {
+      toast.error("Only admin can create project.");
+      navigate("/dashboard", { replace: true });
+      return;
+    }
 
     if (!name.trim()) {
       toast.error("Project name is required.");
@@ -39,6 +47,21 @@ function CreateProject() {
       setSaving(false);
     }
   };
+
+  if (role !== "admin") {
+    return (
+      <div className="workspace-shell">
+        <main className="workspace-container">
+          <section className="workspace-panel">
+            <p className="workspace-empty">Only admin can create projects.</p>
+            <div className="workspace-actions" style={{ marginTop: "0.75rem" }}>
+              <Link className="btn secondary" to="/dashboard">Dashboard</Link>
+            </div>
+          </section>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="workspace-shell">

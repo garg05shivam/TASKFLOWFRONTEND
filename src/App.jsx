@@ -7,7 +7,9 @@ import CreateProject from "./pages/CreateProject";
 import CreateTask from "./pages/CreateTask";
 import Dashboard from "./pages/Dashboard";
 import EditTask from "./pages/EditTask";
+import InviteAccept from "./pages/InviteAccept";
 import Login from "./pages/Login";
+import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
 import ProjectDetails from "./pages/ProjectDetails";
 import Register from "./pages/Register";
@@ -89,6 +91,20 @@ function App() {
               <Profile />
             </ProtectedRoute>
           }
+        />
+
+        <Route
+          path="/notifications"
+          element={
+            <ProtectedRoute>
+              <Notifications />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/invite/accept"
+          element={<InviteAccept />}
         />
       </Routes>
     </>

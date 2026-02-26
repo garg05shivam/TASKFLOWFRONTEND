@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import "./Auth.css";
 
 function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   const slowToastId = "auth-slow";
 
@@ -56,7 +57,14 @@ function Login() {
       toast.dismiss(slowToastId);
       login(response.data.token);
       toast.success("Login successful.");
-      navigate("/dashboard");
+
+      const query = new URLSearchParams(location.search);
+      const redirectTo = query.get("redirect");
+      if (redirectTo && redirectTo.startsWith("/")) {
+        navigate(redirectTo, { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     } catch (error) {
       clearTimeout(delayedToast);
       toast.dismiss(slowToastId);
@@ -82,45 +90,60 @@ function Login() {
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <p className="auth-kicker">TaskFlow</p>
-        <h2>Welcome back</h2>
-        <p className="auth-description">
-          Sign in to manage your projects and tasks.
-        </p>
+    <div className="auth-page auth-page-login">
+      <div className="auth-layout">
+        <aside className="auth-showcase">
+          <p className="auth-kicker">TaskFlow Workspace</p>
+          <h1>Ship projects faster with clear team execution.</h1>
+          <p className="auth-description">
+            Plan work, assign responsibilities, and track delivery with project-level collaboration and notifications.
+          </p>
+          <div className="auth-highlights">
+            <span>Kanban workflow</span>
+            <span>Role-based access</span>
+            <span>Team chat + activity logs</span>
+          </div>
+        </aside>
 
-        <form className="auth-form" onSubmit={handleSubmit}>
-          <label htmlFor="email">Email</label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            placeholder="you@example.com"
-            value={form.email}
-            onChange={handleChange}
-            autoComplete="email"
-          />
+        <div className="auth-card">
+          <p className="auth-kicker">Welcome Back</p>
+          <h2>Sign in to continue</h2>
+          <p className="auth-description">
+            Access your projects, tasks, and team updates.
+          </p>
 
-          <label htmlFor="password">Password</label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            placeholder="Enter your password"
-            value={form.password}
-            onChange={handleChange}
-            autoComplete="current-password"
-          />
+          <form className="auth-form" onSubmit={handleSubmit}>
+            <label htmlFor="email">Email</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="you@example.com"
+              value={form.email}
+              onChange={handleChange}
+              autoComplete="email"
+            />
 
-          <button className="auth-button" type="submit" disabled={loading}>
-            {loading ? "Logging in..." : "Login"}
-          </button>
-        </form>
+            <label htmlFor="password">Password</label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              placeholder="Enter your password"
+              value={form.password}
+              onChange={handleChange}
+              autoComplete="current-password"
+            />
 
-        <p className="auth-footer">
-          Do not have an account? <Link to="/register">Register</Link>
-        </p>
+            <button className="auth-button" type="submit" disabled={loading}>
+              {loading ? "Logging in..." : "Login"}
+            </button>
+          </form>
+
+          <p className="auth-footer">
+            Do not have an account? <Link to="/register">Register</Link>
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -7,12 +7,14 @@ function ProjectList({
   handleSelectProject,
   handleDeleteProject,
   handleUpdateProject,
+  canManageProject,
 }) {
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
 
   const beginEdit = (project) => {
+    if (!canManageProject?.(project)) return;
     setEditingId(project._id);
     setEditName(project.name);
     setEditDescription(project.description || "");
@@ -30,12 +32,24 @@ function ProjectList({
 
   return (
     <section className="section">
-      <h3>Projects</h3>
-
       {projects.map((project) => (
         <article
           key={project._id}
           className={`project-card ${selectedProjectId === project._id ? "active" : ""}`}
+          onClick={() => {
+            if (editingId !== project._id) {
+              handleSelectProject(project);
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(event) => {
+            if (editingId !== project._id && (event.key === "Enter" || event.key === " ")) {
+              event.preventDefault();
+              handleSelectProject(project);
+            }
+          }}
+          style={{ cursor: editingId === project._id ? "default" : "pointer" }}
         >
           {editingId === project._id ? (
             <div className="stack-form">
@@ -72,21 +86,38 @@ function ProjectList({
               <button
                 type="button"
                 className="project-name"
-                onClick={() => handleSelectProject(project)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  handleSelectProject(project);
+                }}
               >
                 {project.name}
               </button>
 
               <p>{project.description || "No description added."}</p>
 
-              <div className="inline-actions">
-                <button className="button button-secondary" onClick={() => beginEdit(project)}>
-                  Edit
-                </button>
-                <button className="button button-danger" onClick={() => handleDeleteProject(project._id)}>
-                  Delete
-                </button>
-              </div>
+              {canManageProject?.(project) && (
+                <div className="inline-actions">
+                  <button
+                    className="button button-secondary"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      beginEdit(project);
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="button button-danger"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleDeleteProject(project._id);
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
             </>
           )}
         </article>

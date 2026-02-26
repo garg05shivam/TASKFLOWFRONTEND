@@ -4,6 +4,7 @@ function TaskList({
   tasks,
   loading,
   selectedProject,
+  canManageTasks,
   handleDeleteTask,
   handleUpdateStatus,
   handleUpdateTask,
@@ -13,6 +14,7 @@ function TaskList({
   const [editDescription, setEditDescription] = useState("");
 
   const beginEdit = (task) => {
+    if (!canManageTasks) return;
     setEditingId(task._id);
     setEditTitle(task.title);
     setEditDescription(task.description || "");
@@ -74,27 +76,33 @@ function TaskList({
             <>
               <h4>{task.title}</h4>
               <p>{task.description || "No description added."}</p>
+              <p className="muted-text">Status: {task.status}</p>
+              <p className="muted-text">
+                Assigned: {task.assignedTo ? `${task.assignedTo.name || "User"} (${task.assignedTo.email || ""})` : "Unassigned"}
+              </p>
 
-              <div className="task-row">
-                <select
-                  className="select-status"
-                  value={task.status}
-                  onChange={(event) => handleUpdateStatus(task._id, event.target.value)}
-                >
-                  <option value="todo">Todo</option>
-                  <option value="in-progress">In Progress</option>
-                  <option value="done">Done</option>
-                </select>
+              {canManageTasks && (
+                <div className="task-row">
+                  <select
+                    className="select-status"
+                    value={task.status}
+                    onChange={(event) => handleUpdateStatus(task._id, event.target.value)}
+                  >
+                    <option value="todo">Todo</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="done">Done</option>
+                  </select>
 
-                <div className="inline-actions">
-                  <button className="button button-secondary" onClick={() => beginEdit(task)}>
-                    Edit
-                  </button>
-                  <button className="button button-danger" onClick={() => handleDeleteTask(task._id)}>
-                    Delete
-                  </button>
+                  <div className="inline-actions">
+                    <button className="button button-secondary" onClick={() => beginEdit(task)}>
+                      Edit
+                    </button>
+                    <button className="button button-danger" onClick={() => handleDeleteTask(task._id)}>
+                      Delete
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
             </>
           )}
         </article>
